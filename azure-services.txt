@@ -1,0 +1,95 @@
+Azure Virtual Machines
+Azure Kubernetes Service (AKS)
+Azure Blob Storage
+Azure SQL Database
+Azure Cosmos DB
+Azure Active Directory
+Azure DevOps Services
+Azure Functions
+Azure Logic Apps
+Azure App Service
+Azure API Management
+Azure Key Vault
+Azure Redis Cache
+Azure Site Recovery
+Azure Virtual Network
+Azure Load Balancer
+Azure ExpressRoute
+Azure CDN (Content Delivery Network)
+Azure Data Lake Storage
+Azure Data Factory
+Azure Databricks
+Azure Stream Analytics
+Azure HDInsight
+Azure Event Hub
+Azure IoT Hub
+Azure IoT Central
+Azure Power BI
+Azure Machine Learning Service
+Azure Cognitive Services
+Azure Bot Service
+Azure Media Services
+Azure Mobile Apps
+Azure Service Fabric
+Azure Backup
+Azure Managed Disks
+Azure Storage Queues
+Azure Table Storage
+Azure File Storage
+Azure Traffic Manager
+Azure Application Gateway
+Azure VPN Gateway
+Azure Web Application Firewall
+Azure Security Center
+Azure Sentinel
+Azure Advisor
+Azure Monitor
+Azure DevTest Labs
+Azure Lab Services
+Azure Blockchain Service
+Azure Quantum
+Azure PlayFab
+Azure Sphere
+Azure Digital Twins
+Azure Maps
+Azure Spatial Anchors
+Azure Time Series Insights
+Azure Stack Hub
+Azure Stack Edge
+Azure Stack HCI
+Azure Blueprints
+Azure Policy
+Azure Cost Management and Billing
+Azure Lighthouse
+Azure Migrate
+Azure Update Management
+Azure Shared Disks
+Azure Archive Storage
+Azure Bastion
+Azure Front Door
+Azure HPC Cache
+Azure CycleCloud
+Azure NetApp Files
+Azure Dedicated Host
+Azure VMware Solution
+Azure DDoS Protection
+Azure Confidential Computing
+Azure Firewall
+Azure Private Link
+Azure Relay
+Azure Service Bus
+Azure SignalR Service
+Azure Data Explorer
+Azure Data Share
+Azure Database for MySQL
+Azure Database for PostgreSQL
+Azure Database for MariaDB
+Azure Analysis Services
+Azure Synapse Analytics
+Azure Purview
+Azure Data Catalog
+Azure StorSimple
+Azure Import/Export Service
+Azure Batch
+Azure Search
+Azure Automation
