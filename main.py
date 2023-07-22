@@ -114,7 +114,7 @@ async def process_queue_messages():
 
     print("Attempting to connect to Azure Service Bus...")
     async with ServiceBusClient.from_connection_string(conn_str=CONNECTION_STR) as servicebus_client:
-        async with servicebus_client.get_queue_receiver(queue_name=INCOMING_QUEUE_NAME, max_wait_time=5, message_visibility_timeout=600) as receiver, \
+        async with servicebus_client.get_queue_receiver(queue_name=INCOMING_QUEUE_NAME, max_wait_time=5, message_visibility_timeout=600, receive_mode="receiveanddelete") as receiver, \
                    servicebus_client.get_queue_sender(queue_name=OUTGOING_QUEUE_NAME) as sender:
             print(f"Listening for messages from queue '{INCOMING_QUEUE_NAME}'...")
 
