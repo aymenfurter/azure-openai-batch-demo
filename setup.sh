@@ -8,7 +8,7 @@ queue1="pendingPrompts"
 queue2="generatedPrompts"
 appName="${projectName}-app"
 environment="${projectName}-env"
-dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:0bbf549598fd0a9c5ae654b0c5d5bac8c25952ce"
+dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:7c788488b086daa4afc1571f0d4bbe34da86fb60"
 
 
 if [ -z "$AZURE_OPENAI_ENDPOINT" ]; then
