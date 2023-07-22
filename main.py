@@ -97,7 +97,7 @@ async def process_single_message(msg, sender, semaphore):
             print("Warning: RateLimitError encountered!")
             TOKENS_PER_SECOND_THRESHOLD *= 0.5  # Reduce the threshold by 50%
             print(f"New TOKENS_PER_SECOND_THRESHOLD: {TOKENS_PER_SECOND_THRESHOLD}")
-            return  # Exit the current message processing or requeue the message based on your requirement.
+            return 
         
         while await should_throttle(tokens):
             print(f"Throttling due to token consumption. Sleeping for {DELAY_SECONDS} seconds...")
@@ -110,7 +110,7 @@ async def process_queue_messages():
     global token_window
     token_window = []
 
-    semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)  # Or whatever limit you want
+    semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
 
     print("Attempting to connect to Azure Service Bus...")
     async with ServiceBusClient.from_connection_string(conn_str=CONNECTION_STR) as servicebus_client:
@@ -122,7 +122,7 @@ async def process_queue_messages():
             tasks = []
 
             while True:
-                msgs = await receiver.receive_messages(max_message_count=10)  # adjust as per your needs
+                msgs = await receiver.receive_messages(max_message_count=10) 
                 if not msgs:
                     break
                 
