@@ -15,7 +15,7 @@ def send_messages_to_queue():
         with sender:
             count = 0  
             for service in services:
-                if count >= 100:
+                if count >= 10:
                     break
                 service = service.strip()  
                 message = ServiceBusMessage(f"Write a 100-word love poem about {service}")
