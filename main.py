@@ -19,7 +19,7 @@ TOKEN_WINDOW_EXPIRATION_SECONDS = 60
 RETRY_COUNT = 3
 
 # Concurrency
-CONCURRENCY_LIMIT = 10
+CONCURRENCY_LIMIT = 3
 
 def configure_openai():
     """Set up the OpenAI configuration."""
@@ -84,7 +84,11 @@ async def should_throttle(tokens):
 
     return tokens_per_second > TOKENS_PER_SECOND_THRESHOLD
 
-async def process_single_message(msg, sender, semaphore):
+async def requeue_message(servicebus_client, msg):
+    async with servicebus_client.get_queue_sender(queue_name=INCOMING_QUEUE_NAME) as sender:
+        await sender.send_messages(ServiceBusMessage(str(msg)))
+
+async def process_single_message(msg, sender, semaphore, servicebus_client):
     """Process a single message."""
     global TOKENS_PER_SECOND_THRESHOLD
     async with semaphore:
@@ -95,8 +99,7 @@ async def process_single_message(msg, sender, semaphore):
             response_content, tokens = await process_with_openai(prompt)
         except RateLimitError:
             print("Warning: RateLimitError encountered!")
-            TOKENS_PER_SECOND_THRESHOLD *= 0.5  # Reduce the threshold by 50%
-            print(f"New TOKENS_PER_SECOND_THRESHOLD: {TOKENS_PER_SECOND_THRESHOLD}")
+            await requeue_message(servicebus_client, msg)
             return 
         
         while await should_throttle(tokens):
@@ -127,7 +130,7 @@ async def process_queue_messages():
                     await asyncio.sleep(5)
                 
                 for msg in msgs:
-                    tasks.append(asyncio.create_task(process_single_message(msg, sender, semaphore)))
+                    tasks.append(asyncio.create_task(process_single_message(msg, sender, semaphore, servicebus_client)))
 
                 await asyncio.gather(*tasks)
 
