@@ -13,7 +13,7 @@ from azure.servicebus import ServiceBusMessage
 CONNECTION_STR = os.getenv('SERVICE_BUS_CONN_STR')
 INCOMING_QUEUE_NAME = "pendingPrompts"
 OUTGOING_QUEUE_NAME = "generatedPrompts"
-TOKENS_PER_SECOND_THRESHOLD = 10 * 1000 / 60 # 10K TPM
+TOKENS_PER_SECOND_THRESHOLD = float(os.getenv('TARGET_TPM', '10')) * 1000 / 60 # 10K TPM by default
 DELAY_SECONDS = 10
 TOKEN_WINDOW_EXPIRATION_SECONDS = 60
 RETRY_COUNT = 3
