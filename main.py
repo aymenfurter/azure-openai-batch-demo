@@ -116,7 +116,6 @@ async def process_queue_messages():
     async with ServiceBusClient.from_connection_string(conn_str=CONNECTION_STR) as servicebus_client:
         async with servicebus_client.get_queue_receiver(queue_name=INCOMING_QUEUE_NAME, max_wait_time=5) as receiver, \
                    servicebus_client.get_queue_sender(queue_name=OUTGOING_QUEUE_NAME) as sender:
-
             print(f"Listening for messages from queue '{INCOMING_QUEUE_NAME}'...")
 
             tasks = []
@@ -124,13 +123,11 @@ async def process_queue_messages():
             while True:
                 msgs = await receiver.receive_messages(max_message_count=10) 
                 if not msgs:
-                    break
+                    print("All messages processed. Sleeping for 30 seconds...")
+                    await asyncio.sleep(30)
                 
                 for msg in msgs:
                     tasks.append(asyncio.create_task(process_single_message(msg, sender, semaphore)))
-                    
-            await asyncio.gather(*tasks)
-            print("All messages processed.")
 
 if __name__ == "__main__":
     configure_openai()
