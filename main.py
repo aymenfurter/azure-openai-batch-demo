@@ -38,7 +38,6 @@ def check_connection_string():
 async def process_with_openai(prompt):
     """Process the prompt with OpenAI and return the response and token count."""
     loop = asyncio.get_running_loop()
-    retries = RETRY_COUNT
     
     response = await loop.run_in_executor(None, lambda: openai.ChatCompletion.create(
         engine="gpt-35-turbo-v0301",
