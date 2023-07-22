@@ -40,24 +40,13 @@ async def process_with_openai(prompt):
     loop = asyncio.get_running_loop()
     retries = RETRY_COUNT
     
-    while retries > 0:
-        try:
-            response = await loop.run_in_executor(None, lambda: openai.ChatCompletion.create(
-                engine="gpt-35-turbo-v0301",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            ))
-            return response["choices"][0]["message"]["content"], response["usage"]["total_tokens"]
-        
-        except RateLimitError as e:
-            retries -= 1
-            global TOKENS_PER_SECOND_THRESHOLD
-            TOKENS_PER_SECOND_THRESHOLD *= 0.7
-            print(f"Warning: {str(e)}. Reducing token threshold by 30% and waiting 10 seconds before retrying.")
-            await asyncio.sleep(10)
-
-    raise Exception(f"Failed to process prompt with OpenAI after {RETRY_COUNT} retries.")
+    response = await loop.run_in_executor(None, lambda: openai.ChatCompletion.create(
+        engine="gpt-35-turbo-v0301",
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
+    ))
+    return response["choices"][0]["message"]["content"], response["usage"]["total_tokens"]
 
 async def should_throttle(tokens):
     """Determine if processing should be throttled based on token consumption."""
