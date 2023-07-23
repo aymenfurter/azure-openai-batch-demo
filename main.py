@@ -7,7 +7,16 @@ import openai
 from openai.error import RateLimitError
 from azure.servicebus.aio import ServiceBusClient
 from azure.servicebus import ServiceBusMessage
+import logging
+from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.log_exporter import AzureEventHandler
 
+
+logger = logging.getLogger(__name__)
+logger.addHandler(AzureLogHandler())
+
+events = logging.getLogger(__name__)
+events.addHandler(AzureEventHandler())
 
 # Constants
 CONNECTION_STR = os.getenv('SERVICE_BUS_CONN_STR')
@@ -30,7 +39,7 @@ def configure_openai():
 def check_connection_string():
     """Ensure the connection string environment variable is set."""
     if not CONNECTION_STR:
-        print("Error: The environment variable SERVICE_BUS_CONN_STR is not set or is empty.")
+        logger.info("Error: The environment variable SERVICE_BUS_CONN_STR is not set or is empty.")
         sys.exit(1)
 
 
@@ -44,6 +53,7 @@ async def process_with_openai(prompt):
             {"role": "user", "content": prompt}
         ]
     ))
+
     return response["choices"][0]["message"]["content"], response["usage"]["total_tokens"]
 
 async def should_throttle(tokens):
@@ -63,7 +73,7 @@ async def should_throttle(tokens):
     tokens_per_thousand_minute = tokens_per_second * 60 / 1000
     threshold_per_thousand_minute = TOKENS_PER_SECOND_THRESHOLD * 60 / 1000
 
-    print(f"Current: {tokens_per_thousand_minute:.2f}K TPM / Target: {threshold_per_thousand_minute:.2f}K TPM")
+    logger.info(f"Current: {tokens_per_thousand_minute:.2f}K TPM / Target: {threshold_per_thousand_minute:.2f}K TPM")
 
 
     cutoff = datetime.utcnow() - timedelta(seconds=TOKEN_WINDOW_EXPIRATION_SECONDS)
@@ -85,12 +95,12 @@ async def process_single_message(msg, sender, semaphore, servicebus_client):
         try:
             response_content, tokens = await process_with_openai(prompt)
         except RateLimitError:
-            print("Warning: RateLimitError encountered!")
+            logger.warning("RateLimitError encountered!")
             await requeue_message(servicebus_client, msg)
             return 
         
         while await should_throttle(tokens):
-            print(f"Throttling due to token consumption. Sleeping for {DELAY_SECONDS} seconds...")
+            logger.info(f"Throttling due to token consumption. Sleeping for {DELAY_SECONDS} seconds...")
             await asyncio.sleep(DELAY_SECONDS)
 
         await sender.send_messages(ServiceBusMessage(response_content))
@@ -102,18 +112,19 @@ async def process_queue_messages():
 
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
 
-    print("Attempting to connect to Azure Service Bus...")
+    logger.info("Attempting to connect to Azure Service Bus...")
     async with ServiceBusClient.from_connection_string(conn_str=CONNECTION_STR) as servicebus_client:
         async with servicebus_client.get_queue_receiver(queue_name=INCOMING_QUEUE_NAME, max_wait_time=5, message_visibility_timeout=600, receive_mode="receiveanddelete") as receiver, \
                    servicebus_client.get_queue_sender(queue_name=OUTGOING_QUEUE_NAME) as sender:
-            print(f"Listening for messages from queue '{INCOMING_QUEUE_NAME}'...")
+            logger.info("Connected to Azure Service Bus.")
+            logger.info(f"Listening for messages from queue '{INCOMING_QUEUE_NAME}'...")
 
             tasks = []
 
             while True:
                 msgs = await receiver.receive_messages(max_message_count=CONCURRENCY_LIMIT) 
                 if not msgs:
-                    print("All messages processed. Sleeping for 5 seconds...")
+                    logger.info("All messages processed. Sleeping for 5 seconds...")
                     await asyncio.sleep(5)
                 
                 for msg in msgs:
@@ -122,6 +133,7 @@ async def process_queue_messages():
                 await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
+    logger.info("Starting up...")
     configure_openai()
     check_connection_string()
     asyncio.run(process_queue_messages())

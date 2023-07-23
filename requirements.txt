@@ -1,3 +1,4 @@
 azure-servicebus
 openai
 asyncio
+opencensus-ext-azure

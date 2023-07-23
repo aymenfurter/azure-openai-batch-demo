@@ -1,74 +1,85 @@
-#!bin/bash
+#!/bin/bash
 
+# Script Configurations
 projectName="azure-openai-batch-demo"
+location="northeurope"
+dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:de8603f9c0a1736215b6b7d5ee8c917f053418a3"
+
+# Derived Names
 resourceGroupName="${projectName}-rg"
-location="switzerlandnorth"
 serviceBusNamespace="${projectName}sb"
 queue1="pendingPrompts"
 queue2="generatedPrompts"
 appName="${projectName}-app"
-environment="${projectName}-env"
-dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:de8603f9c0a1736215b6b7d5ee8c917f053418a3"
+environment="en-${projectName}"
+workspaceName="${projectName}-la"
+appInsightsName="${projectName}-ai"
 
+# Ensure environment variables are set
+ensure_env_variable() {
+    local var_name="$1"
+    if [ -z "${!var_name}" ]; then
+        echo "$var_name is not set. Please set it and try again."
+        exit 1
+    fi
+}
 
-if [ -z "$AZURE_OPENAI_ENDPOINT" ]; then
-    echo "AZURE_OPENAI_ENDPOINT is not set. Please set it and try again."
-    exit 1
-fi
-
-if [ -z "$AZURE_OPENAI_KEY" ]; then
-    echo "AZURE_OPENAI_KEY is not set. Please set it and try again."
-    exit 1
-fi
-
-# Check if resource group exists
-exists=$(az group exists --name $resourceGroupName)
-
-if [ "$exists" == "false" ]; then
-    az group create --name $resourceGroupName --location $location
+# Setup Azure Service Bus
+setup_service_bus() {
     az servicebus namespace create --resource-group $resourceGroupName --name $serviceBusNamespace --location $location
     az servicebus queue create --resource-group $resourceGroupName --namespace-name $serviceBusNamespace --name $queue1
     az servicebus queue create --resource-group $resourceGroupName --namespace-name $serviceBusNamespace --name $queue2
     echo "Service Bus setup of $serviceBusNamespace complete with two queues: $queue1 and $queue2."
+}
 
+# Deploy Container App
+deploy_container_app() {
+    local connectionString="$1"
+    local appInsightsConnectionString="$2"
+
+    az containerapp create \
+        --name $appName \
+        --resource-group $resourceGroupName \
+        --environment $environment \
+        --image $dockerImage \
+        --min-replicas 0 \
+        --max-replicas 3 \
+        --env-vars AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT AZURE_OPENAI_KEY=secretref:openaikey SERVICE_BUS_CONN_STR=secretref:constring APPLICATIONINSIGHTS_CONNECTION_STRING=secretref:appinsightscon \
+        --secrets "constring=$connectionString" \
+        --secrets "openaikey=$AZURE_OPENAI_KEY" \
+        --secrets "appinsightscon=$appInsightsConnectionString" \
+        --scale-rule-name azure-servicebus-queue-rule \
+        --scale-rule-type azure-servicebus \
+        --scale-rule-metadata "queueName=$queue1" "namespace=$serviceBusNamespace" "messageCount=5" \
+        --scale-rule-auth "connection=constring"
+
+    echo "Deployment of ACA $appName complete!"
+    echo "Deployment complete!"
+}
+
+# Main Script Execution
+ensure_env_variable "AZURE_OPENAI_ENDPOINT"
+ensure_env_variable "AZURE_OPENAI_KEY"
+
+exists=$(az group exists --name $resourceGroupName)
+
+if [ "$exists" == "false" ]; then
+    az group create --name $resourceGroupName --location $location
+    setup_service_bus
 else
     echo "Resource group $resourceGroupName already exists. Skipping resource creation."
 fi
 
-
 connectionString=$(az servicebus namespace authorization-rule keys list --resource-group $resourceGroupName --namespace-name $serviceBusNamespace --name RootManageSharedAccessKey --query primaryConnectionString --output tsv)
-
 az containerapp show --name $appName --resource-group $resourceGroupName > /dev/null 2>&1
+az monitor log-analytics workspace create --resource-group $resourceGroupName --workspace-name $workspaceName --location $location
+workspace_id=$(az monitor log-analytics workspace show --resource-group $resourceGroupName --workspace-name $workspaceName --query customerId -o tsv)
+workspace_shared_key=$(az monitor log-analytics workspace get-shared-keys --resource-group $resourceGroupName --workspace-name $workspaceName --query "primarySharedKey" -o tsv)
+az containerapp env create --name $environment --resource-group $resourceGroupName --location $location --logs-workspace-id $workspace_id --logs-workspace-key $workspace_shared_key 
 
-environmentName="azure-openai-batch-demo-env"
+az monitor app-insights component create --app $appInsightsName --location $location --resource-group $resourceGroupName --kind web
+appInsightsConnectionString=$(az monitor app-insights component show-connection-string --app $appInsightsName --resource-group $resourceGroupName --output tsv)
 
-exists=$(az containerapp show --name $appName --resource-group $resourceGroupName --query id -o tsv)
-
-if [ -z "$exists" ]; then
-
-    # create environment
-    az containerapp env create --name $environment --resource-group $resourceGroupName --location $location
-    
-else
-    echo "Managed app $environmentName already exists in $resourceGroupName. Skipping env creation."
-fi
-
-az containerapp create \
-    --name $appName \
-    --resource-group $resourceGroupName \
-    --environment $environment \
-    --image $dockerImage \
-    --min-replicas 0 \
-    --max-replicas 3 \
-    --env-vars AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT AZURE_OPENAI_KEY=$AZURE_OPENAI_KEY SERVICE_BUS_CONN_STR=secretref:constring \
-    --secrets "constring=$connectionString" \
-    --scale-rule-name azure-servicebus-queue-rule \
-    --scale-rule-type azure-servicebus \
-    --scale-rule-metadata "queueName=$queue1" "namespace=$serviceBusNamespace" "messageCount=5" \
-    --scale-rule-auth "connection=constring"
-
-echo "Deployment of ACA $appName complete!"
-echo "Deployment complete!"
+deploy_container_app "$connectionString" "$appInsightsConnectionString"
 
 echo $connectionString
-
