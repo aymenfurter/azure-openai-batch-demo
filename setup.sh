@@ -2,18 +2,18 @@
 
 # Script Configurations
 projectName="azure-openai-batch-demo"
-location="northeurope"
-dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:de8603f9c0a1736215b6b7d5ee8c917f053418a3"
+location="switzerlandnorth"
+dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:ebc0b42fb769610f6986b82295d36db9cb685ba5"
 
 # Derived Names
 resourceGroupName="${projectName}-rg"
 serviceBusNamespace="${projectName}sb"
 queue1="pendingPrompts"
 queue2="generatedPrompts"
-appName="${projectName}-app"
-environment="en-${projectName}"
-workspaceName="${projectName}-la"
-appInsightsName="${projectName}-ai"
+appName="${projectName}"
+environment="${projectName}-environment"
+workspaceName="${projectName}-law"
+appInsightsName="${projectName}-appinsights"
 
 # Ensure environment variables are set
 ensure_env_variable() {
@@ -45,9 +45,7 @@ deploy_container_app() {
         --min-replicas 0 \
         --max-replicas 3 \
         --env-vars AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT AZURE_OPENAI_KEY=secretref:openaikey SERVICE_BUS_CONN_STR=secretref:constring APPLICATIONINSIGHTS_CONNECTION_STRING=secretref:appinsightscon \
-        --secrets "constring=$connectionString" \
-        --secrets "openaikey=$AZURE_OPENAI_KEY" \
-        --secrets "appinsightscon=$appInsightsConnectionString" \
+        --secrets constring="$connectionString" openaikey="$AZURE_OPENAI_KEY" appinsightscon="$appInsightsConnectionString" \
         --scale-rule-name azure-servicebus-queue-rule \
         --scale-rule-type azure-servicebus \
         --scale-rule-metadata "queueName=$queue1" "namespace=$serviceBusNamespace" "messageCount=5" \
@@ -78,8 +76,8 @@ workspace_shared_key=$(az monitor log-analytics workspace get-shared-keys --reso
 az containerapp env create --name $environment --resource-group $resourceGroupName --location $location --logs-workspace-id $workspace_id --logs-workspace-key $workspace_shared_key 
 
 az monitor app-insights component create --app $appInsightsName --location $location --resource-group $resourceGroupName --kind web
-appInsightsConnectionString=$(az monitor app-insights component show-connection-string --app $appInsightsName --resource-group $resourceGroupName --output tsv)
+connString=$(az resource show -g $resourceGroupName -n $appInsightsName --resource-type "microsoft.insights/components" --query properties.ConnectionString -o tsv)
 
-deploy_container_app "$connectionString" "$appInsightsConnectionString"
+deploy_container_app "$connectionString" "$connString"
 
 echo $connectionString
