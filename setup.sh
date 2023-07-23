@@ -3,7 +3,7 @@
 # Script Configurations
 projectName="azure-openai-batch-demo"
 location="switzerlandnorth"
-dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:ebc0b42fb769610f6986b82295d36db9cb685ba5"
+dockerImage="ghcr.io/aymenfurter/azure-openai-batch-demo/batch:06e4ab82d5686a23159dde593dcf8f706f8caea3"
 
 # Derived Names
 resourceGroupName="${projectName}-rg"

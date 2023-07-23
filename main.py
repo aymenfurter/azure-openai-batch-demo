@@ -9,14 +9,11 @@ from azure.servicebus.aio import ServiceBusClient
 from azure.servicebus import ServiceBusMessage
 import logging
 from opencensus.ext.azure.log_exporter import AzureLogHandler
-from opencensus.ext.azure.log_exporter import AzureEventHandler
 
 
 logger = logging.getLogger(__name__)
 logger.addHandler(AzureLogHandler())
-
-events = logging.getLogger(__name__)
-events.addHandler(AzureEventHandler())
+logger.setLevel(logging.INFO) 
 
 # Constants
 CONNECTION_STR = os.getenv('SERVICE_BUS_CONN_STR')
