@@ -1,5 +1,7 @@
+![Architecture](preview.png?raw=true)
+
 # azure-open-ai-batch-demo
-A demo on how to run Azure OpenAI generation batch jobs on ACA
+A demo on how to run Azure OpenAI generation batch jobs on ACA. 
 
 ## Prerequisites
 
@@ -17,7 +19,7 @@ A demo on how to run Azure OpenAI generation batch jobs on ACA
    git clone https://github.com/Azure-Samples/azure-open-ai-batch-demo.git
    ```
 
-2\. Create a Service Bus namespace and two queues:
+2\. Create a Service Bus and deploy Azure Container App:
 
    `./setup.sh`
 
