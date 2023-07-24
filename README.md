@@ -1,7 +1,16 @@
-![Architecture](preview.png?raw=true)
+<div id="top"></div>
 
-# azure-open-ai-batch-demo
-A demo on how to run Azure OpenAI generation batch jobs on ACA. 
+<br />
+<div align="center">
+    <img src="preview.png?raw=true">
+    <h1 align="center">azure-open-ai-batch-demo</h1>
+    <p align="center">
+        A demo on how to run Azure OpenAI generation batch jobs on ACA.
+    </p>
+
+</div>
+<br />
+
 
 ## Prerequisites
 
